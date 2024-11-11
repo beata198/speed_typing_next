@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import Timer from "./components/timer";
 import StatCard from "./UI/statCard";
 import DesktopOnlyMessage from "./components/desktopOnlyMessage";
