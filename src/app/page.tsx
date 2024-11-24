@@ -4,10 +4,25 @@ import Timer from "./components/timer";
 import StatCard from "./UI/statCard";
 import DesktopOnlyMessage from "./components/desktopOnlyMessage";
 import BlinkingCursor from "./UI/blinkingCursor";
+import Modal from "./components/modal";
+
+const allowedKeys = [
+  "Backspace",
+  "Shift",
+  " ",
+  "'",
+  '"',
+  ":",
+  ";",
+  "-",
+  ",",
+  ".",
+];
 
 export default function Home() {
   const [generateWords, setGenerateWords] = useState<string[]>([]);
   const [userTyping, setUserTyping] = useState<string[]>([]);
+  const [typingIsAllowed, setTypingIsAllowed] = useState<boolean>(true);
 
   const [wordsPerMinute, setWordsPerMinute] = useState(0);
   const [active, setActive] = useState<boolean>(false);
@@ -18,11 +33,14 @@ export default function Home() {
 
   const [offset, setOffset] = useState<number>(200);
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
+
   // useEffect(() => {
-  //   if (active === false && userTyping[0]) {
+  //   if (!active && userTyping.length > 0) {
   //     setActive(true);
   //   }
   // }, [userTyping, active]);
+
+  // console.log(active, userTyping[0]);
 
   useEffect(() => {
     const dataFetch = async () => {
@@ -37,23 +55,19 @@ export default function Home() {
 
   useEffect(() => {
     const keyPressHandler = (e: KeyboardEvent) => {
+      if (!typingIsAllowed) {
+        return;
+      }
+
+      if (!active) {
+        setActive(true);
+      }
+
       if (startTime === null) {
         setStartTime(Date.now());
       }
 
-      const allowedKeys = [
-        "Backspace",
-        "Shift",
-        " ",
-        "'",
-        '"',
-        ":",
-        ";",
-        "-",
-        ",",
-        ".",
-      ];
-      // check is letter
+      // check if it is a letter
       const isLetter = e.key.length === 1 && /^[a-zA-Z]$/.test(e.key);
       if (allowedKeys.includes(e.key) || isLetter) {
         if (userTyping.length > 0) {
@@ -71,6 +85,7 @@ export default function Home() {
         } else if (e.key === "Shift") {
         } else setUserTyping((prev) => prev.concat(e.key));
       }
+
       e.preventDefault();
       return;
     };
@@ -80,7 +95,7 @@ export default function Home() {
     return () => {
       window.removeEventListener("keydown", keyPressHandler);
     };
-  }, [startTime, userTyping]);
+  }, [startTime, userTyping, active, typingIsAllowed]);
 
   useEffect(() => {
     if (startTime === null) return;
@@ -106,10 +121,12 @@ export default function Home() {
     setCharsPerMinute(calculatedCPM);
   }, [userTyping, startTime, generateWords]);
 
+  // set active status when START button is pressed
   const setActiveHandler = (value: boolean) => {
     setActive(value);
   };
 
+  // display message to mobile users
   useEffect(() => {
     const handleResize = () => {
       if (typeof window !== "undefined") {
@@ -122,16 +139,29 @@ export default function Home() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const clearUserTypingHandler = () => {
+    // setUserTyping([]);
+    // setTypingIsAllowed(false);
+    // setOffset(200);
+  };
+
+  const allowTypingHandler = () => {
+    setTypingIsAllowed(true);
+  };
+
   return (
     <>
+      <Modal />
       {isSmallScreen && <DesktopOnlyMessage />}
       {!isSmallScreen && (
         <>
           <div className="flex gap-4 items-center justify-center">
             <Timer
-              timeLeft={60}
+              timeLeft={10}
               active={active}
               onSetActive={setActiveHandler}
+              onClearTyping={clearUserTypingHandler}
+              onAllowTyping={allowTypingHandler}
             />
           </div>
           <div className="flex gap-12 justify-center mb-10">
